@@ -128,13 +128,18 @@ with st.expander("ℹ️ Tutorial de la aplicación"):
         - Camorrista: CQC + Salud.
 
     - Cada pieza de armadura dispone de una estadística terciaria aleatoria entre las otras 4 estadísticas restantes.                 
-    - Las armaduras consideradas para el cálculo son Tier 5, ya que siempre tienen la siguiente distribución:
+    - Las armaduras consideradas para el cálculo son Tier 5, ya que siempre tienen la siguiente distribución de estadísticas:
         - 30 puntos en la estadística primaria.
         - 25 puntos en la estadística secundaria.
         - 20 puntos en la estadística terciaria.
-    - Permite incluir un exótico
-    - Añade modificadores de +5 y +10
-    - Ajusta los puntos sobrantes en una estadística prioritaria
+    - Existe la posibilidad de poder usar armaduras de Tier 4, ya que pueden caer con 75 de estadísticas como máximo.
+    - Permite incluir un exótico en el cálculo, teniendo en cuenta que los exóticos nuevos obtienen estadísticas de Tier 2. Para el cálculo, se toma como referencia la siguiente distribución para el exótico:
+        - 30 puntos en la estadística primaria.
+        - 20 puntos en la estadística secundaria.
+        - 13 puntos en la estadística terciaria.
+    - El arquetipo del exótico se indica en la tabla de cantidad por arquetipos con un asterisco.
+    - Puedes añadir la cantidad de modificadores mayores (+10) y menores (+5) que vas a tener en la build
+    - Por último, puedes elegir la estadística prioritaria a maximizar en el caso de que los mínimos indicados permitan números superiores.
     """)
 
 st.write("Indica los mínimos requeridos para cada estadística:")
@@ -144,7 +149,7 @@ minimos = {}
 for s in estadisticas:
     minimos[s] = st.number_input(s, 0, 200, 0)
 
-exotic = st.checkbox("¿Quieres usar un exótico en tu build?")
+exotic = st.checkbox("¿Quieres usar un exótico?")
 
 col1, col2 = st.columns(2)
 with col1:
