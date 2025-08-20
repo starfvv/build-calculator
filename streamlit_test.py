@@ -122,7 +122,7 @@ col1, col2 = st.columns(2)
 with col1:
     num_mods10 = st.selectbox("Número de modificadores +10", list(range(6)), index=0)
 with col2:
-    num_mods5 = st.selectbox("Número de modificadores +5", list(range(0,(5-mods10)+1)), index=0)
+    num_mods5 = st.selectbox("Número de modificadores +5", list(range(0,(5-num_mods10)+1)), index=0)
 
 prioridad = st.selectbox("Estadística a priorizar con puntos sobrantes", ["Ninguna"] + estadisticas, index=0)
 prioridad = None if prioridad == "Ninguna" else prioridad
