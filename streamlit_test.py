@@ -108,9 +108,6 @@ def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad
     return resultado
 
 
-img = Image.open("images/logo_credo.png")
-st.image(img, use_container_width=True)
-
 st.title("Simulador de armaduras")
 st.write("Indica los mínimos para cada estadística:")
 
@@ -120,8 +117,13 @@ for s in estadisticas:
     minimos[s] = st.number_input(s, 0, 200, 0)
 
 exotic = st.checkbox("Usar un exótico en la build")
-num_mods10 = st.selectbox("Número de modificadores (+10 cada uno)", [0,1,2,3,4,5], index=0)
-num_mods5 = st.selectbox("Número de modificadores (+5 cada uno)", [0,1,2,3,4,5], index=0)
+
+col1, col2 = st.columns(2)
+with col1:
+    num_mods10 = st.selectbox("Número de modificadores +10", list(range(6)), index=0)
+with col2:
+    num_mods5 = st.selectbox("Número de modificadores +5", list(range(0,(5-mods10)+1)), index=0)
+
 prioridad = st.selectbox("Estadística a priorizar con puntos sobrantes", ["Ninguna"] + estadisticas, index=0)
 prioridad = None if prioridad == "Ninguna" else prioridad
 
@@ -169,3 +171,8 @@ if st.button("Calcular combinación óptima"):
     else:
 
         mostrar_resultado(res)
+
+
+
+img = Image.open("images/logo_credo.png")
+st.image(img, use_container_width=True)
