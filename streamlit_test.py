@@ -114,7 +114,6 @@ st.markdown(
         "<h1 style='text-align: center;'>Calculadora de arquetipos</h1>",
             unsafe_allow_html=True
             )
-)
 
 with st.expander("ℹ️ Tutorial de la aplicación"):
     st.write("""
