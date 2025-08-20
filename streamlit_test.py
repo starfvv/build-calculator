@@ -111,8 +111,9 @@ img = Image.open("images/logo_credo.png")
 st.image(img, use_container_width=True)
 
 st.markdown(
-    "<h1 style='text-align: center;'>Calculadora de arquetipos</h1>",
-    unsafe_allow_html=True
+        "<h1 style='text-align: center;'>Calculadora de arquetipos</h1>",
+            unsafe_allow_html=True
+            )
 )
 
 with st.expander("ℹ️ Tutorial de la aplicación"):
