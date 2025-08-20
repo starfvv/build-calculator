@@ -119,7 +119,7 @@ with st.expander("ℹ️ Tutorial de la aplicación"):
     st.write("""
     Esta aplicación calcula una combinación de arquetipos que cumple con las estadísticas mínimas indicadas por el usuario.
     - Los arquetipos utilizados son los existentes en este momento en el juego.
-    Cada arquetipo viene determinado por una estadística primaria y una secundaria, como se recoge en la lista siguiente:
+    Cada arquetipo viene determinado por una estadística primaria y una secundaria, como se recoge en la siguiente lista:
         - Artillero: Arma + Granada.
         - Bastión: Salud + Clase.
         - Especialista: Clase + Armas.
