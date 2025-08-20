@@ -138,7 +138,7 @@ with st.expander("ℹ️ Tutorial de la aplicación"):
         - 20 puntos en la estadística secundaria.
         - 13 puntos en la estadística terciaria.
     - El arquetipo del exótico se indica en la tabla de cantidad por arquetipos con un asterisco.
-    - Puedes añadir la cantidad de modificadores mayores (+10) y menores (+5) que vas a tener en la build
+    - Puedes añadir la cantidad de modificadores mayores (+10) y menores (+5) que quieres equipar en tu build.
     - Por último, puedes elegir la estadística prioritaria a maximizar en el caso de que los mínimos indicados permitan números superiores.
     """)
 
