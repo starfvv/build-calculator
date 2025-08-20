@@ -117,9 +117,9 @@ st.markdown(
 
 with st.expander("ℹ️ Tutorial de la aplicación"):
     st.write("""
-    Esta aplicación calcula una combinación de arquetipos que cumple con las estadísticas mínimas indicadas por el usuario.
-    - Los arquetipos utilizados son los existentes en este momento en el juego.
-    Cada arquetipo viene determinado por una estadística primaria y una secundaria, como se recoge en la siguiente lista:
+    Esta aplicación calcula una combinación de arquetipos que cumpla con las estadísticas mínimas indicadas por ti.
+    - Los arquetipos utilizados son los existentes, a día de hoy, en el juego.
+    Cada arquetipo está determinado por una estadística primaria y una secundaria, como se recoge en la siguiente lista:
         - Artillero: Arma + Granada.
         - Bastión: Salud + Clase.
         - Especialista: Clase + Armas.
@@ -138,7 +138,7 @@ with st.expander("ℹ️ Tutorial de la aplicación"):
         - 20 puntos en la estadística secundaria.
         - 13 puntos en la estadística terciaria.
     - El arquetipo del exótico se indica en la tabla de cantidad por arquetipos con un asterisco.
-    - Puedes añadir la cantidad de modificadores mayores (+10) y menores (+5) que quieres equipar en tu build.
+    - Si quieres, es posible añadir la cantidad de modificadores mayores (+10) y menores (+5) que quieras equipar en tu build.
     - Por último, puedes elegir la estadística prioritaria a maximizar en el caso de que los mínimos indicados permitan números superiores.
     """)
 
