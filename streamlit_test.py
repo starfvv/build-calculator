@@ -107,16 +107,44 @@ def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad
 
     return resultado
 
+img = Image.open("images/logo_credo.png")
+st.image(img, use_container_width=True)
 
-st.title("Simulador de armaduras")
-st.write("Indica los mínimos para cada estadística:")
+st.markdown(
+    "<h1 style='text-align: center;'>Simulador de Armaduras</h1>",
+    unsafe_allow_html=True
+)
+
+with st.expander("ℹ️ Tutorial de la aplicación"):
+    st.write("""
+    Esta aplicación calcula una combinación de arquetipos que cumpla las estadísticas mínimas que le indiques.
+    - Los arquetipos utilizados son los existentes en este momento en el juego.
+    Cada arquetipo viene determinado por una estadística primaria y una secundaria, como se recoge en la lista siguiente:
+        - Artillero: Arma + Granada.
+        - Bastión: Salud + Clase.
+        - Especialista: Clase + Armas.
+        - Granadero: Granada + Super.
+        - Parangón: Super + CQC.
+        - Camorrista: CQC + Salud.
+
+    - Cada pieza de armadura dispone de una estadística terciaria aleatoria entre las otras 4 estadísticas restantes.                 
+    - Las armaduras consideradas para el cálculo son Tier 5, ya que siempre tienen la siguiente distribución:
+        - 30 puntos en la estadística primaria.
+        - 25 puntos en la estadística secundaria.
+        - 20 puntos en la estadística terciaria.
+    - Permite incluir un exótico
+    - Añade modificadores de +5 y +10
+    - Ajusta los puntos sobrantes en una estadística prioritaria
+    """)
+
+st.write("Indica los mínimos requeridos para cada estadística:")
 
 estadisticas = ["Salud", "CQC", "Granada", "Super", "Clase", "Armas"]
 minimos = {}
 for s in estadisticas:
     minimos[s] = st.number_input(s, 0, 200, 0)
 
-exotic = st.checkbox("Usar un exótico en la build")
+exotic = st.checkbox("¿Quieres usar un exótico en tu build?")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -124,7 +152,7 @@ with col1:
 with col2:
     num_mods5 = st.selectbox("Número de modificadores +5", list(range(0,(5-num_mods10)+1)), index=0)
 
-prioridad = st.selectbox("Estadística a priorizar con puntos sobrantes", ["Ninguna"] + estadisticas, index=0)
+prioridad = st.selectbox("Estadística a priorizar", ["Ninguna"] + estadisticas, index=0)
 prioridad = None if prioridad == "Ninguna" else prioridad
 
 def mostrar_resultado(res):
@@ -172,7 +200,3 @@ if st.button("Calcular combinación óptima"):
 
         mostrar_resultado(res)
 
-
-
-img = Image.open("images/logo_credo.png")
-st.image(img, use_container_width=True)
