@@ -111,35 +111,33 @@ img = Image.open("images/logo_credo.png")
 st.image(img, use_container_width=True)
 
 st.markdown(
-        "<h1 style='text-align: center;'>Calculadora de arquetipos</h1>",
-            unsafe_allow_html=True
-            )
+    "<h1 style='text-align: center;'>Calculadora de arquetipos</h1>",
+    unsafe_allow_html=True
+)
 
 with st.expander("ℹ️ Tutorial de la aplicación"):
-    st.write("""
+    st.markdown("""
     Esta aplicación calcula una combinación de arquetipos que cumpla con las estadísticas mínimas indicadas por ti.
-    - Los arquetipos utilizados son los existentes, a día de hoy, en el juego.
-    Cada arquetipo está determinado por una estadística primaria y una secundaria, como se recoge en la siguiente lista:
-        - Artillero: Arma + Granada.
-        - Bastión: Salud + Clase.
-        - Especialista: Clase + Armas.
-        - Granadero: Granada + Super.
-        - Parangón: Super + CQC.
-        - Camorrista: CQC + Salud.
-
+    - Los arquetipos utilizados son los existentes, a día de hoy, en el juego.  
+      Cada arquetipo está determinado por una estadística primaria y una secundaria:
+        * Artillero: Arma + Granada  
+        * Bastión: Salud + Clase  
+        * Especialista: Clase + Armas  
+        * Granadero: Granada + Super  
+        * Parangón: Super + CQC  
+        * Camorrista: CQC + Salud
     - Cada pieza de armadura dispone de una estadística terciaria aleatoria entre las otras 4 estadísticas restantes.                 
-    - Las armaduras consideradas para el cálculo son Tier 5, ya que siempre tienen la siguiente distribución de estadísticas:
-        - 30 puntos en la estadística primaria.
-        - 25 puntos en la estadística secundaria.
-        - 20 puntos en la estadística terciaria.
-    - Existe la posibilidad de poder usar armaduras de Tier 4, ya que pueden caer con 75 de estadísticas como máximo.
-    - Permite incluir un exótico en el cálculo, teniendo en cuenta que los exóticos nuevos obtienen estadísticas de Tier 2. Para el cálculo, se toma como referencia la siguiente distribución para el exótico:
-        - 30 puntos en la estadística primaria.
-        - 20 puntos en la estadística secundaria.
-        - 13 puntos en la estadística terciaria.
-    - El arquetipo del exótico se indica en la tabla de cantidad por arquetipos con un asterisco.
-    - Si quieres, es posible añadir la cantidad de modificadores mayores (+10) y menores (+5) que quieras equipar en tu build.
-    - Por último, puedes elegir la estadística prioritaria a maximizar en el caso de que los mínimos indicados permitan números superiores.
+    - Las armaduras consideradas para el cálculo son Tier 5, ya que siempre tienen la siguiente distribución:
+        * 30 puntos en la estadística primaria  
+        * 25 puntos en la estadística secundaria  
+        * 20 puntos en la estadística terciaria
+    - Existe la posibilidad de usar armaduras de Tier 4, que pueden caer con 75 de estadísticas como máximo.  
+    - Permite incluir un exótico en el cálculo (Tier 2):  
+        * 30 puntos en la estadística primaria  
+        * 20 puntos en la estadística secundaria  
+        * 13 puntos en la estadística terciaria
+    - Si quieres, es posible añadir modificadores mayores (+10) y menores (+5).  
+    - Por último, puedes elegir la estadística prioritaria a maximizar si los mínimos permiten superar esos valores.
     """)
 
 st.write("Indica los mínimos requeridos para cada estadística:")
@@ -155,18 +153,24 @@ col1, col2 = st.columns(2)
 with col1:
     num_mods10 = st.selectbox("Número de modificadores +10", list(range(6)), index=0)
 with col2:
-    num_mods5 = st.selectbox("Número de modificadores +5", list(range(0,(5-num_mods10)+1)), index=0)
+    num_mods5 = st.selectbox("Número de modificadores +5", list(range(0, (5 - num_mods10) + 1)), index=0)
 
 prioridad = st.selectbox("Estadística a priorizar", ["Ninguna"] + estadisticas, index=0)
 prioridad = None if prioridad == "Ninguna" else prioridad
 
 def mostrar_resultado(res):
     st.subheader("Cantidad de piezas por arquetipo")
-    df_piezas = pd.DataFrame({"Arquetipo": list(res["piezas"].keys()),
-                              "Cantidad": list(res["piezas"].values())})
+    exo = res.get("exotico")
+    filas = []
+    # sumamos la pieza exótica al arquetipo que corresponda y lo marcamos con '*'
+    for a, cant in res["piezas"].items():
+        cant_total = cant + (1 if exo == a else 0)
+        cant_str = f"{cant_total}{'*' if exo == a and cant_total > 0 else ''}"
+        filas.append({"Arquetipo": a, "Cantidad": cant_str})
+    df_piezas = pd.DataFrame(filas)
     st.dataframe(df_piezas.to_dict(orient="records"))
-    if res.get("exotico"):
-        st.write(f"Arquetipo exótico: {res['exotico']}")
+    if exo:
+        st.caption("(*) Indica el arquetipo de la armadura exótica necesaria.")
 
     st.subheader("Estadísticas terciarias por arquetipo")
     tercios = []
@@ -180,19 +184,27 @@ def mostrar_resultado(res):
         st.write("No hay estadísticas terciarias asignadas.")
 
     st.subheader("Modificadores asignados (+10 y +5)")
-    mods = [{"Estadística": s, "Cantidad +10": res["modificadores10"].get(s,0),
-             "Cantidad +5": res["modificadores5"].get(s,0)} for s in estadisticas if s in res["modificadores10"] or s in res["modificadores5"]]
+    estadisticas = ["Salud", "CQC", "Granada", "Super", "Clase", "Armas"]
+    mods = [{"Estadística": s,
+             "Cantidad +10": res["modificadores10"].get(s, 0),
+             "Cantidad +5": res["modificadores5"].get(s, 0)}
+            for s in estadisticas
+            if s in res["modificadores10"] or s in res["modificadores5"]]
     if mods:
         st.dataframe(pd.DataFrame(mods).to_dict(orient="records"))
     else:
         st.write("No se han asignado modificadores.")
 
     st.subheader("Estadísticas finales")
-    df_stats = pd.DataFrame({"Estadística": [s for s in res["estadisticas_finales"].keys()],
-                             "Valor final": list(res["estadisticas_finales"].values())})
+    df_stats = pd.DataFrame({
+        "Estadística": list(res["estadisticas_finales"].keys()),
+        "Valor final": list(res["estadisticas_finales"].values())
+    })
     total = df_stats["Valor final"].sum()
-    df_stats = pd.concat([df_stats, pd.DataFrame({"Estadística": ["Total"], "Valor final": [total]})],
-                         ignore_index=True)
+    df_stats = pd.concat(
+        [df_stats, pd.DataFrame({"Estadística": ["Total"], "Valor final": [total]})],
+        ignore_index=True
+    )
     st.dataframe(df_stats.to_dict(orient="records"))
 
 
@@ -202,6 +214,5 @@ if st.button("Calcular combinación óptima"):
     if res is None:
         st.error("No se encontró ninguna combinación posible con esos mínimos.")
     else:
-
         mostrar_resultado(res)
 
