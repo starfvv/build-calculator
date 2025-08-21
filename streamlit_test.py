@@ -69,14 +69,14 @@ def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad
     prob += pl.lpSum(stat[s] for s in estadisticas) == 90*pl.lpSum(x[a] for a in arquetipos.keys()) + \
             78*pl.lpSum(exo[a] for a in arquetipos.keys()) + 10*pl.lpSum(mods10[s] for s in estadisticas) + \
             5*pl.lpSum(mods5[s] for s in estadisticas)
-
+    
     if prioridad:
         prob += stat[prioridad]
 
     prob.solve(pl.PULP_CBC_CMD(msg=False))
     if pl.LpStatus[prob.status] != "Optimal":
         return None
-
+    
     piezas = {a: int(x[a].value()) for a in arquetipos.keys()}
     exotico = None
     for a in arquetipos.keys():
@@ -100,6 +100,52 @@ def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad
     resultado["modificadores5"] = {s:int(mods5[s].value()) for s in estadisticas if mods5[s].value()>0}
     resultado["estadisticas_finales"] = {s:int(stat[s].value()) for s in estadisticas}
     return resultado
+
+def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos):
+    fig, axs = plt.subplots(2,2, figsize=(12,10))
+    axs = axs.flatten()
+    for ax in axs: ax.axis('off')
+    axs[0].table(cellText=df_piezas.values, colLabels=df_piezas.columns, loc='center')
+    axs[1].table(cellText=df_terciarias.values, colLabels=df_terciarias.columns, loc='center')
+    axs[2].table(cellText=df_mods.values, colLabels=df_mods.columns, loc='center')
+    axs[3].table(cellText=df_stats.values, colLabels=df_stats.columns, loc='center')
+    fig.suptitle(f"Resultado del cálculo\nMínimos: {minimos}", fontsize=16)
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    plt.close(fig)
+    return buf
+
+def mostrar_resultado(res, minimos):
+    piezas_data = []
+    for a, cant in res["piezas"].items():
+        total_cant = cant + (1 if res.get("exotico")==a else 0)
+        piezas_data.append({"Arquetipo": a, "Cantidad": f"{total_cant} *" if res.get("exotico")==a else total_cant})
+    df_piezas = pd.DataFrame(piezas_data)
+    tercios_data = []
+    for a in res["terciarias"]:
+        for s, v in res["terciarias"][a].items():
+            if v>0: tercios_data.append({"Arquetipo": a, "Terciaria": s, "Cantidad": v})
+    df_terciarias = pd.DataFrame(tercios_data)
+    mods_data = []
+    estadisticas = ["Salud", "CQC", "Granada", "Super", "Clase", "Armas"]
+    for s in estadisticas:
+        mods_data.append({"Estadística": s, "Cantidad +10": res["modificadores10"].get(s,0),
+                          "Cantidad +5": res["modificadores5"].get(s,0)})
+    df_mods = pd.DataFrame(mods_data)
+    df_stats = pd.DataFrame({"Estadística": list(res["estadisticas_finales"].keys()),
+                             "Valor final": list(res["estadisticas_finales"].values())})
+    total = df_stats["Valor final"].sum()
+    df_stats = pd.concat([df_stats, pd.DataFrame({"Estadística":["Total"], "Valor final":[total]})], ignore_index=True)
+    st.subheader("Cantidad de piezas por arquetipo")
+    st.dataframe(df_piezas, hide_index=True)
+    st.subheader("Estadísticas terciarias por arquetipo")
+    st.dataframe(df_terciarias, hide_index=True)
+    st.subheader("Modificadores asignados (+10 y +5)")
+    st.dataframe(df_mods, hide_index=True)
+    st.subheader("Estadísticas finales")
+    st.dataframe(df_stats, hide_index=True)
+    return df_piezas, df_terciarias, df_mods, df_stats
 
 img = Image.open("images/logo_credo.png")
 st.image(img, use_container_width=True)
@@ -145,75 +191,13 @@ with col2:
 prioridad = st.selectbox("Estadística a priorizar", ["Ninguna"]+estadisticas, index=0)
 prioridad = None if prioridad=="Ninguna" else prioridad
 
-def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos):
-    fig, axs = plt.subplots(2,2, figsize=(12,10))
-    axs = axs.flatten()
-    for ax in axs: ax.axis('off')
-    axs[0].table(cellText=df_piezas.values, colLabels=df_piezas.columns, loc='center')
-    axs[1].table(cellText=df_terciarias.values, colLabels=df_terciarias.columns, loc='center')
-    axs[2].table(cellText=df_mods.values, colLabels=df_mods.columns, loc='center')
-    axs[3].table(cellText=df_stats.values, colLabels=df_stats.columns, loc='center')
-    fig.suptitle(f"Resultado del cálculo\nMínimos: {minimos}", fontsize=16)
-    buf = BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    plt.close(fig)
-    return buf
-
-def mostrar_resultado(res, minimos):
-    piezas_data = []
-    for a, cant in res["piezas"].items():
-        total_cant = cant + (1 if res.get("exotico")==a else 0)
-        piezas_data.append({"Arquetipo": a, "Cantidad": f"{total_cant} *" if res.get("exotico")==a else total_cant})
-    df_piezas = pd.DataFrame(piezas_data)
-
-    tercios_data = []
-    for a in res["terciarias"]:
-        for s, v in res["terciarias"][a].items():
-            if v>0: tercios_data.append({"Arquetipo": a, "Terciaria": s, "Cantidad": v})
-    df_terciarias = pd.DataFrame(tercios_data)
-
-    mods_data = []
-    for s in estadisticas:
-        mods_data.append({"Estadística": s, "Cantidad +10": res["modificadores10"].get(s,0),
-                          "Cantidad +5": res["modificadores5"].get(s,0)})
-    df_mods = pd.DataFrame(mods_data)
-
-    df_stats = pd.DataFrame({"Estadística": list(res["estadisticas_finales"].keys()),
-                             "Valor final": list(res["estadisticas_finales"].values())})
-    total = df_stats["Valor final"].sum()
-    df_stats = pd.concat([df_stats, pd.DataFrame({"Estadística":["Total"], "Valor final":[total]})], ignore_index=True)
-
-    st.subheader("Cantidad de piezas por arquetipo")
-    st.dataframe(df_piezas)
-    st.subheader("Estadísticas terciarias por arquetipo")
-    st.dataframe(df_terciarias)
-    st.subheader("Modificadores asignados (+10 y +5)")
-    st.dataframe(df_mods)
-    st.subheader("Estadísticas finales")
-    st.dataframe(df_stats)
-
-    st.session_state["df_piezas"] = df_piezas
-    st.session_state["df_terciarias"] = df_terciarias
-    st.session_state["df_mods"] = df_mods
-    st.session_state["df_stats"] = df_stats
-    st.session_state["minimos"] = minimos
-
 if st.button("Calcular combinación óptima"):
     res = build_calc(minimos, num_mods10=num_mods10, num_mods5=num_mods5, usar_exotico=exotic, prioridad=prioridad)
     if res is None:
         st.error("No se encontró ninguna combinación posible con esos mínimos.")
     else:
-        mostrar_resultado(res, minimos)
-
-if "df_piezas" in st.session_state:
-    buf = exportar_imagen(
-        st.session_state["df_piezas"],
-        st.session_state["df_terciarias"],
-        st.session_state["df_mods"],
-        st.session_state["df_stats"],
-        st.session_state["minimos"]
-    )
-    st.download_button("📥 Descargar resultado", data=buf, file_name="resultado.png", mime="image/png")
+        df_piezas, df_terciarias, df_mods, df_stats = mostrar_resultado(res, minimos)
+        buf = exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos)
+        st.download_button("📥 Descargar resultado", data=buf, file_name="resultado.png", mime="image/png")
 
 
