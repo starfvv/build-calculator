@@ -198,6 +198,6 @@ if st.button("Calcular combinación óptima"):
     else:
         df_piezas, df_terciarias, df_mods, df_stats = mostrar_resultado(res, minimos)
         buf = exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos)
-        st.download_button("📥 Descargar resultado", data=buf, file_name="resultado.png", mime="image/png")
+        st.download_button("📥 Descargar resultado", data=buf, file_name="resultado.png", mime="image/png", on_click="ignore")
 
 
