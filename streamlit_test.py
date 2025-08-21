@@ -2,6 +2,8 @@ import streamlit as st
 import pulp as pl
 import pandas as pd
 from PIL import Image
+import matplotlib.pyplot as plt
+import io
 
 def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad=None):
     estadisticas = ["Salud", "CQC", "Granada", "Super", "Clase", "Armas"]
@@ -153,60 +155,13 @@ col1, col2 = st.columns(2)
 with col1:
     num_mods10 = st.selectbox("Número de modificadores +10", list(range(6)), index=0)
 with col2:
-    num_mods5 = st.selectbox("Número de modificadores +5", list(range(0, (5 - num_mods10) + 1)), index=0)
+    num_mods5 = st.selectbox("Número de modificadores +5", list(range(0,(5-num_mods10)+1)), index=0)
 
 prioridad = st.selectbox("Estadística a priorizar", ["Ninguna"] + estadisticas, index=0)
 prioridad = None if prioridad == "Ninguna" else prioridad
 
-def mostrar_resultado(res):
-    st.subheader("Cantidad de piezas por arquetipo")
-    exo = res.get("exotico")
-    filas = []
-    # sumamos la pieza exótica al arquetipo que corresponda y lo marcamos con '*'
-    for a, cant in res["piezas"].items():
-        cant_total = cant + (1 if exo == a else 0)
-        cant_str = f"{cant_total}{'*' if exo == a and cant_total > 0 else ''}"
-        filas.append({"Arquetipo": a, "Cantidad": cant_str})
-    df_piezas = pd.DataFrame(filas)
-    st.dataframe(df_piezas.to_dict(orient="records"))
-    if exo:
-        st.caption("(*) Indica el arquetipo de la armadura exótica necesaria.")
-
-    st.subheader("Estadísticas terciarias por arquetipo")
-    tercios = []
-    for a in res["terciarias"]:
-        for s in res["terciarias"][a]:
-            if res["terciarias"][a][s] > 0:
-                tercios.append({"Arquetipo": a, "Terciaria": s, "Cantidad": res["terciarias"][a][s]})
-    if tercios:
-        st.dataframe(pd.DataFrame(tercios).to_dict(orient="records"))
-    else:
-        st.write("No hay estadísticas terciarias asignadas.")
-
-    st.subheader("Modificadores asignados (+10 y +5)")
-    estadisticas = ["Salud", "CQC", "Granada", "Super", "Clase", "Armas"]
-    mods = [{"Estadística": s,
-             "Cantidad +10": res["modificadores10"].get(s, 0),
-             "Cantidad +5": res["modificadores5"].get(s, 0)}
-            for s in estadisticas
-            if s in res["modificadores10"] or s in res["modificadores5"]]
-    if mods:
-        st.dataframe(pd.DataFrame(mods).to_dict(orient="records"))
-    else:
-        st.write("No se han asignado modificadores.")
-
-    st.subheader("Estadísticas finales")
-    df_stats = pd.DataFrame({
-        "Estadística": list(res["estadisticas_finales"].keys()),
-        "Valor final": list(res["estadisticas_finales"].values())
-    })
-    total = df_stats["Valor final"].sum()
-    df_stats = pd.concat(
-        [df_stats, pd.DataFrame({"Estadística": ["Total"], "Valor final": [total]})],
-        ignore_index=True
-    )
-    st.dataframe(df_stats.to_dict(orient="records"))
-
+if "resultado" not in st.session_state:
+    st.session_state.resultado = None
 
 if st.button("Calcular combinación óptima"):
     res = build_calc(minimos, num_mods10=num_mods10, num_mods5=num_mods5,
@@ -214,5 +169,94 @@ if st.button("Calcular combinación óptima"):
     if res is None:
         st.error("No se encontró ninguna combinación posible con esos mínimos.")
     else:
-        mostrar_resultado(res)
+        st.session_state.resultado = res
+
+def exportar_todo_2x2(df_piezas, df_terciarias, df_mods, df_stats, minimos):
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    plt.subplots_adjust(hspace=0.6, wspace=0.4)
+    axes = axes.flatten()
+    cell_fontsize = 12
+    header_fontsize = 14
+
+    def plot_table(ax, df, title):
+        ax.axis('off')
+        ax.set_title(title, fontsize=header_fontsize, fontweight='bold')
+        if not df.empty:
+            # Crear colores alternos por fila
+            n_rows, n_cols = df.shape
+            colors = [["#f0f0f0" if i % 2 == 0 else "#ffffff" for j in range(n_cols)] for i in range(n_rows)]
+            table = ax.table(cellText=df.values,
+                             colLabels=df.columns,
+                             cellLoc='center',
+                             loc='center',
+                             colColours=["#d9d9d9"]*n_cols,
+                             cellColours=colors)
+            table.auto_set_font_size(False)
+            table.set_fontsize(cell_fontsize)
+            table.scale(1, 1.5)  # Ajusta alto de filas
+        else:
+            ax.text(0.5, 0.5, "No hay datos", ha='center', va='center', fontsize=cell_fontsize)
+
+    plot_table(axes[0], df_piezas, "Cantidad de piezas por arquetipo")
+    plot_table(axes[1], df_terciarias, "Estadísticas terciarias por arquetipo")
+    plot_table(axes[2], df_mods, "Modificadores asignados")
+    plot_table(axes[3], df_stats, "Estadísticas finales")
+
+    plt.suptitle("Resultado del cálculo", fontsize=18, fontweight='bold')
+    minimos_str = ", ".join([f"{k}: {v}" for k, v in minimos.items()])
+    plt.figtext(0.5, 0.93, f"Mínimos aplicados: {minimos_str}", ha="center", fontsize=14)
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    return buf
+
+if st.session_state.resultado:
+    res = st.session_state.resultado
+
+    st.subheader("Cantidad de piezas por arquetipo")
+    df_piezas = pd.DataFrame({"Arquetipo": list(res["piezas"].keys()),
+                              "Cantidad": list(res["piezas"].values())})
+    st.dataframe(df_piezas.to_dict(orient="records"))
+    if res.get("exotico"):
+        st.write(f"Arquetipo exótico: {res['exotico']}")
+
+    st.subheader("Estadísticas terciarias por arquetipo")
+    tercios = []
+    for a in res["terciarias"]:
+        for s in res["terciarias"][a]:
+            if res["terciarias"][a][s] > 0:
+                tercios.append({"Arquetipo": a, "Terciaria": s, "Cantidad": res["terciarias"][a][s]})
+    df_terciarias = pd.DataFrame(tercios)
+    if not df_terciarias.empty:
+        st.dataframe(df_terciarias.to_dict(orient="records"))
+    else:
+        st.write("No hay estadísticas terciarias asignadas.")
+
+    st.subheader("Modificadores asignados (+10 y +5)")
+    mods = [{"Estadística": s, "Cantidad +10": res["modificadores10"].get(s,0),
+             "Cantidad +5": res["modificadores5"].get(s,0)} for s in estadisticas 
+            if s in res["modificadores10"] or s in res["modificadores5"]]
+    df_mods = pd.DataFrame(mods)
+    if not df_mods.empty:
+        st.dataframe(df_mods.to_dict(orient="records"))
+    else:
+        st.write("No se han asignado modificadores.")
+
+    st.subheader("Estadísticas finales")
+    df_stats = pd.DataFrame({"Estadística": [s for s in res["estadisticas_finales"].keys()],
+                             "Valor final": list(res["estadisticas_finales"].values())})
+    total = df_stats["Valor final"].sum()
+    df_stats = pd.concat([df_stats, pd.DataFrame({"Estadística": ["Total"], "Valor final": [total]})],
+                         ignore_index=True)
+    st.dataframe(df_stats.to_dict(orient="records"))
+
+    buf = exportar_todo_2x2(df_piezas, df_terciarias, df_mods, df_stats, minimos)
+    st.download_button("📥 Descargar resultado como imagen", data=buf, file_name="build_resultado.png", mime="image/png")
+
+
+
+
+
+
 
