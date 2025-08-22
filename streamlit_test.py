@@ -101,12 +101,12 @@ def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad
     resultado["estadisticas_finales"] = {s:int(stat[s].value()) for s in estadisticas}
     return resultado
 
-def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos):
+def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, prioridad, minimos):
     from matplotlib import font_manager as fm
     nexa_light = fm.FontProperties(fname="fonts/Nexa Light.otf")
     nexa_bold = fm.FontProperties(fname="fonts/Nexa Bold.otf")
 
-    fig, axs = plt.subplots(2,2, figsize=(14,12))  # figura más grande
+    fig, axs = plt.subplots(2,2, figsize=(10,8))
     axs = axs.flatten()
     for ax in axs: ax.axis('off')
 
@@ -121,7 +121,7 @@ def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos):
         tabla = ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', colLoc='center')
         tabla.auto_set_font_size(False)
         tabla.set_fontsize(10)
-        tabla.scale(1.2, 1.2)  # celdas más grandes, pero no tanto
+        tabla.scale(1.4, 1.4)
         for (row, col), cell in tabla.get_celld().items():
             if row == 0:
                 cell.get_text().set_fontproperties(nexa_bold)
@@ -130,13 +130,13 @@ def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos):
             else:
                 cell.get_text().set_fontproperties(nexa_light)
             cell.set_edgecolor('#4d4d4d')
-        ax.set_title(titulo, fontsize=12, fontproperties=nexa_bold, pad=5)
+        ax.set_title(titulo, fontsize=18, fontproperties=nexa_bold, y=0.85)
 
     subtitulo = ", ".join([f"{k}: {v}" for k,v in minimos.items()])
-    fig.suptitle("Resultado del cálculo", fontsize=16, fontproperties=nexa_bold)
-    fig.text(0.5, 0.92, f"Mínimos: {subtitulo}", ha='center', fontsize=12, fontproperties=nexa_light)
+    fig.suptitle("Resultado del cálculo", fontsize=18, fontproperties=nexa_bold)
+    fig.text(0.5, 0.92, f"Prioridad: $\\bf{{{prioridad}}}$, estadísticas mínimas: {subtitulo}", ha='center', fontsize=12, fontproperties=nexa_light)
 
-    fig.subplots_adjust(hspace=0.35, wspace=0.3)  # un poco más de espacio vertical
+    fig.subplots_adjust(wspace=0.5)
     buf = BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
@@ -224,7 +224,7 @@ if st.button("Calcular combinación óptima"):
         st.error("No se encontró ninguna combinación posible con esos mínimos.")
     else:
         df_piezas, df_terciarias, df_mods, df_stats = mostrar_resultado(res, minimos)
-        buf = exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos)
+        buf = exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, prioridad, minimos)
         st.download_button("📥 Descargar resultado", data=buf, file_name="resultado.png", mime="image/png", on_click="ignore")
 
 
