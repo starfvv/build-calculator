@@ -105,13 +105,29 @@ def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos):
     fig, axs = plt.subplots(2,2, figsize=(12,10))
     axs = axs.flatten()
     for ax in axs: ax.axis('off')
-    axs[0].table(cellText=df_piezas.values, colLabels=df_piezas.columns, loc='center')
-    axs[1].table(cellText=df_terciarias.values, colLabels=df_terciarias.columns, loc='center')
-    axs[2].table(cellText=df_mods.values, colLabels=df_mods.columns, loc='center')
-    axs[3].table(cellText=df_stats.values, colLabels=df_stats.columns, loc='center')
-    fig.suptitle(f"Resultado del cálculo\nMínimos: {minimos}", fontsize=16)
+    tablas = [
+        (df_piezas, "Piezas por arquetipo"),
+        (df_terciarias, "Terciarias"),
+        (df_mods, "Modificadores"),
+        (df_stats, "Estadísticas finales")
+    ]
+    for ax, (df, titulo) in zip(axs, tablas):
+        tabla = ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', colLoc='center')
+        tabla.auto_set_font_size(False)
+        tabla.set_fontsize(10)
+        tabla.scale(1.2, 1.2)
+        for (row, col), cell in tabla.get_celld().items():
+            if row == 0:
+                cell.set_text_props(weight='bold')
+                cell.set_facecolor('#f2f2f2')
+            cell.set_edgecolor('#4d4d4d')
+        ax.set_title(titulo, fontsize=12, fontweight='bold', fontname='Verdana', pad=5)
+    subtitulo = ", ".join([f"{k}: {v}" for k,v in minimos.items()])
+    fig.suptitle("Resultado del cálculo", fontsize=16, fontweight='bold', fontname='Verdana')
+    fig.text(0.5, 0.92, f"Mínimos: {subtitulo}", ha='center', fontsize=12, fontname='Verdana')
+    fig.subplots_adjust(hspace=0.4, wspace=0.3)
     buf = BytesIO()
-    plt.savefig(buf, format='png')
+    plt.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
     plt.close(fig)
     return buf
