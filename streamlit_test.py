@@ -134,7 +134,7 @@ def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, prioridad, mini
 
     subtitulo = ", ".join([f"{k}: {v}" for k,v in minimos.items()])
     fig.suptitle("Resultado del cálculo", fontsize=18, fontproperties=nexa_bold)
-    fig.text(0.5, 0.92, f"Prioridad: $\\bf{{{prioridad}}}$, estadísticas mínimas: {subtitulo}", ha='center', fontsize=12, fontproperties=nexa_light)
+    fig.text(0.5, 0.90, f"Prioridad: $\\bf{{{prioridad}}}$, estadísticas mínimas: {subtitulo}", ha='center', fontsize=12, fontproperties=nexa_light)
 
     fig.subplots_adjust(wspace=0.5)
     buf = BytesIO()
