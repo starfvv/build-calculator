@@ -5,7 +5,11 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad=None):
+def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False, 
+               prioridad = None):
+
+    # Contexto necesario para el cálculo, con las estadísticas y arquetipos.
+
     estadisticas = ["Salud", "CQC", "Granada", "Super", "Clase", "Armas"]
     arquetipos = {
         "Artillero": ("Armas", "Granada"),
@@ -16,11 +20,31 @@ def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad
         "Camorrista": ("CQC", "Salud"),
     }
 
-    prob = pl.LpProblem("Build_Armor", pl.LpMaximize if prioridad else pl.LpStatusOptimal)
-    x = pl.LpVariable.dicts("pieces", arquetipos.keys(), lowBound=0, upBound=5, cat="Integer")
-    exo = pl.LpVariable.dicts("exotic", arquetipos.keys(), lowBound=0, upBound=1, cat="Integer")
+    # Definición del problema en PuLP.
+
+    prob = pl.LpProblem("Calculadora_Arquetipos", pl.LpMaximize 
+                        if prioridad else pl.LpStatusOptimal)
+
+    # Primera variable de decisión, x_a, mide la cantidad de piezas de un determinado 
+    # arquetipo.
+
+    x = pl.LpVariable.dicts("equipamiento", arquetipos.keys(), lowBound = 0, 
+                            upBound = 5, cat = "Integer")
+    
+    # Segunda variable de decisión, exo_a, elige el arquetipo del exótico si el botón 
+    # de exótico esta seleccionado.
+
+    exo = pl.LpVariable.dicts("exotico", arquetipos.keys(), lowBound = 0, 
+                              upBound = 1, cat = "Integer")
+    
+    # Se añaden dos restricciones al problema para garantizar que la suma de x_a y 
+    # exo_a es igual a 5 (se necesitan 5 piezas de equipamiento) y que dependiendo de 
+    # la selección, se use un exótico o no.
+
     prob += pl.lpSum(x[a] + exo[a] for a in arquetipos.keys()) == 5
     prob += pl.lpSum(exo[a] for a in arquetipos.keys()) == (1 if usar_exotico else 0)
+
+    # Definición de la tercera variable de decisión, t_[a][s], que 
 
     t = {}
     t_exo = {}
