@@ -102,30 +102,41 @@ def build_calc(minimos, num_mods10=5, num_mods5=0, usar_exotico=False, prioridad
     return resultado
 
 def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, minimos):
-    fig, axs = plt.subplots(2,2, figsize=(12,10))
+    from matplotlib import font_manager as fm
+    nexa_light = fm.FontProperties(fname="fonts/Nexa Light.otf")
+    nexa_bold = fm.FontProperties(fname="fonts/Nexa Bold.otf")
+
+    fig, axs = plt.subplots(2,2, figsize=(14,12))  # figura más grande
     axs = axs.flatten()
     for ax in axs: ax.axis('off')
+
     tablas = [
-        (df_piezas, "Piezas por arquetipo"),
-        (df_terciarias, "Terciarias"),
-        (df_mods, "Modificadores"),
+        (df_piezas, "Cantidad de piezas por arquetipo"),
+        (df_terciarias, "Estadísticas terciarias por arquetipo"),
+        (df_mods, "Modificadores asignados (+10 y +5)"),
         (df_stats, "Estadísticas finales")
     ]
+
     for ax, (df, titulo) in zip(axs, tablas):
         tabla = ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', colLoc='center')
         tabla.auto_set_font_size(False)
         tabla.set_fontsize(10)
-        tabla.scale(1.2, 1.2)
+        tabla.scale(1.2, 1.2)  # celdas más grandes, pero no tanto
         for (row, col), cell in tabla.get_celld().items():
             if row == 0:
-                cell.set_text_props(weight='bold')
+                cell.get_text().set_fontproperties(nexa_bold)
+                cell.get_text().set_weight('bold')
                 cell.set_facecolor('#f2f2f2')
+            else:
+                cell.get_text().set_fontproperties(nexa_light)
             cell.set_edgecolor('#4d4d4d')
-        ax.set_title(titulo, fontsize=12, fontweight='bold', fontname='Verdana', pad=5)
+        ax.set_title(titulo, fontsize=12, fontproperties=nexa_bold, pad=5)
+
     subtitulo = ", ".join([f"{k}: {v}" for k,v in minimos.items()])
-    fig.suptitle("Resultado del cálculo", fontsize=16, fontweight='bold', fontname='Verdana')
-    fig.text(0.5, 0.92, f"Mínimos: {subtitulo}", ha='center', fontsize=12, fontname='Verdana')
-    fig.subplots_adjust(hspace=0.4, wspace=0.3)
+    fig.suptitle("Resultado del cálculo", fontsize=16, fontproperties=nexa_bold)
+    fig.text(0.5, 0.92, f"Mínimos: {subtitulo}", ha='center', fontsize=12, fontproperties=nexa_light)
+
+    fig.subplots_adjust(hspace=0.35, wspace=0.3)  # un poco más de espacio vertical
     buf = BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     buf.seek(0)
