@@ -44,7 +44,12 @@ def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False,
     prob += pl.lpSum(x[a] + exo[a] for a in arquetipos.keys()) == 5
     prob += pl.lpSum(exo[a] for a in arquetipos.keys()) == (1 if usar_exotico else 0)
 
-    # Definición de la tercera variable de decisión, t_[a][s], que 
+    # Definición de la tercera y cuarta variable de decisión, t_[a][s] y t_exo_[a][s],
+    # que miden la cantidad de piezas de un determinado arquetipo a con una estadística 
+    # terciaria s y la estadística terciaria s que debe tener el exótico de arquetipo a. 
+    # Además, se aprovecha el bucle con el que se generan las variables de decisión
+    # para introducir las restricciones que obligan a que la suma de todas las piezas 
+    # de arquetipo a (con s no fijado), sea igual a x_a.
 
     t = {}
     t_exo = {}
@@ -53,15 +58,25 @@ def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False,
         t_exo[a] = {}
         for s in estadisticas:
             if s != prim and s != sec:
-                t[a][s] = pl.LpVariable(f"terciaria_{a}_{s}", lowBound=0, upBound=5, cat="Integer")
-                t_exo[a][s] = pl.LpVariable(f"terciaria_exo_{a}_{s}", lowBound=0, upBound=1, cat="Integer")
+                t[a][s] = pl.LpVariable(f"terciaria_{a}_{s}", lowBound=0, upBound=5,
+                                         cat="Integer")
+                t_exo[a][s] = pl.LpVariable(f"terciaria_exo_{a}_{s}", lowBound=0,
+                                             upBound=1, cat="Integer")
         prob += pl.lpSum(t[a][s] for s in t[a].keys()) == x[a]
         prob += pl.lpSum(t_exo[a][s] for s in t_exo[a].keys()) == exo[a]
 
-    mods10 = pl.LpVariable.dicts("mod10", estadisticas, lowBound=0, upBound=5, cat="Integer")
-    mods5 = pl.LpVariable.dicts("mod5", estadisticas, lowBound=0, upBound=2, cat="Integer")
+    # Además, se añaden variables auxiliares para indicar el número de modificadores +10
+    # o +5 que el usuario quiere utilizar en la build. No añadimos una restricción
+    # que limite el número modificadores en conjunto porque ya se restringe el input.
+
+    mods10 = pl.LpVariable.dicts("mod10", estadisticas, lowBound=0, upBound=5, 
+                                 cat="Integer")
+    mods5 = pl.LpVariable.dicts("mod5", estadisticas, lowBound=0, upBound=5, 
+                                cat="Integer")
     prob += pl.lpSum(mods10[s] for s in estadisticas) == num_mods10
     prob += pl.lpSum(mods5[s] for s in estadisticas) <= num_mods5
+
+    # Se define la expresión lineal que posteriormente su util#
 
     stat = {s: 0 for s in estadisticas}
     for s in estadisticas:
