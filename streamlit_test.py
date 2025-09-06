@@ -1,3 +1,5 @@
+# Importamos las librerías necesarias para el programa.
+
 import streamlit as st
 import pulp as pl
 import pandas as pd
@@ -5,9 +7,11 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False, 
-               prioridad = None):
+# Definimos la función de cálculo:
 
+def build_calc(minimos, valores = None, num_mods10 = 5, num_mods5 = 0, 
+               usar_exotico = False, prioridad = None):
+    
     # Contexto necesario para el cálculo, con las estadísticas y arquetipos.
 
     estadisticas = ["Salud", "CQC", "Granada", "Super", "Clase", "Armas"]
@@ -22,8 +26,8 @@ def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False,
 
     # Definición del problema en PuLP.
 
-    prob = pl.LpProblem("Calculadora_Arquetipos", pl.LpMaximize 
-                        if prioridad else pl.LpStatusOptimal)
+    prob = pl.LpProblem("Calculadora_Arquetipos", pl.LpMaximize if prioridad else 
+                        pl.LpStatusOptimal)
 
     # Primera variable de decisión, x_a, mide la cantidad de piezas de un determinado 
     # arquetipo.
@@ -58,15 +62,15 @@ def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False,
         t_exo[a] = {}
         for s in estadisticas:
             if s != prim and s != sec:
-                t[a][s] = pl.LpVariable(f"terciaria_{a}_{s}", lowBound=0, upBound=5,
-                                         cat="Integer")
-                t_exo[a][s] = pl.LpVariable(f"terciaria_exo_{a}_{s}", lowBound=0,
-                                             upBound=1, cat="Integer")
+                t[a][s] = pl.LpVariable(f"terciaria_{a}_{s}", lowBound=0, upBound=5, 
+                                        cat="Integer")
+                t_exo[a][s] = pl.LpVariable(f"terciaria_exo_{a}_{s}", lowBound=0, 
+                                            upBound=1, cat="Integer")
         prob += pl.lpSum(t[a][s] for s in t[a].keys()) == x[a]
         prob += pl.lpSum(t_exo[a][s] for s in t_exo[a].keys()) == exo[a]
 
-    # Además, se añaden variables auxiliares para indicar el número de modificadores +10
-    # o +5 que el usuario quiere utilizar en la build. No añadimos una restricción
+    # Además, se añaden variables auxiliares para indicar el número de modificadores 
+    # +10 o +5 que el usuario quiere utilizar en la build. No añadimos una restricción
     # que limite el número modificadores en conjunto porque ya se restringe el input.
 
     mods10 = pl.LpVariable.dicts("mod10", estadisticas, lowBound=0, upBound=5, 
@@ -76,7 +80,7 @@ def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False,
     prob += pl.lpSum(mods10[s] for s in estadisticas) == num_mods10
     prob += pl.lpSum(mods5[s] for s in estadisticas) <= num_mods5
 
-    # Se define la expresión lineal que posteriormente su util#
+    # Se define la expresión lineal que posteriormente su utilización.
 
     stat = {s: 0 for s in estadisticas}
     for s in estadisticas:
@@ -105,25 +109,31 @@ def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False,
     for s, min_val in minimos.items():
         prob += stat[s] >= min_val
 
-    prob += pl.lpSum(stat[s] for s in estadisticas) == 90*pl.lpSum(x[a] for a in arquetipos.keys()) + \
-            78*pl.lpSum(exo[a] for a in arquetipos.keys()) + 10*pl.lpSum(mods10[s] for s in estadisticas) + \
+    prob += pl.lpSum(stat[s] for s in estadisticas) == \
+            90*pl.lpSum(x[a] for a in arquetipos.keys()) + \
+            78*pl.lpSum(exo[a] for a in arquetipos.keys()) + \
+            10*pl.lpSum(mods10[s] for s in estadisticas) + \
             5*pl.lpSum(mods5[s] for s in estadisticas)
-    
+
     if prioridad:
         prob += stat[prioridad]
 
     prob.solve(pl.PULP_CBC_CMD(msg=False))
+
     if pl.LpStatus[prob.status] != "Optimal":
         return None
-    
+
     piezas = {a: int(x[a].value()) for a in arquetipos.keys()}
+
     exotico = None
+
     for a in arquetipos.keys():
         if int(exo[a].value())==1:
             exotico = a
             break
 
     terciarias_res = {}
+
     for a, (prim, sec) in arquetipos.items():
         d = {}
         for s in estadisticas:
@@ -135,9 +145,12 @@ def build_calc(minimos, num_mods10 = 5, num_mods5 = 0, usar_exotico = False,
     resultado["piezas"] = piezas
     resultado["exotico"] = exotico
     resultado["terciarias"] = terciarias_res
-    resultado["modificadores10"] = {s:int(mods10[s].value()) for s in estadisticas if mods10[s].value()>0}
-    resultado["modificadores5"] = {s:int(mods5[s].value()) for s in estadisticas if mods5[s].value()>0}
+    resultado["modificadores10"] = {s:int(mods10[s].value()) for s in estadisticas 
+                                    if mods10[s].value()>0}
+    resultado["modificadores5"] = {s:int(mods5[s].value()) for s in estadisticas 
+                                   if mods5[s].value()>0}
     resultado["estadisticas_finales"] = {s:int(stat[s].value()) for s in estadisticas}
+
     return resultado
 
 def exportar_imagen(df_piezas, df_terciarias, df_mods, df_stats, prioridad, minimos):
@@ -219,7 +232,7 @@ st.markdown("<h1 style='text-align: center;'>Calculadora de arquetipos</h1>", un
 
 with st.expander("ℹ️ Tutorial de la aplicación"):
     st.markdown("""
-    Esta aplicación calcula una combinación de arquetipos que cumpla con las estadísticas mínimas indicadas por ti.
+    Esta aplicación calcula una combinación de arquetipos que cumpla con las estadísticas mínimas indicadas por el usuario.
     - Los arquetipos utilizados son los existentes, a día de hoy, en el juego.  
       Cada arquetipo está determinado por una estadística primaria y una secundaria:
         * Artillero: Arma + Granada  
@@ -249,16 +262,30 @@ for s in estadisticas:
     minimos[s] = st.number_input(s, 0, 200, 0)
 
 exotic = st.checkbox("¿Quieres usar un exótico?")
+
 col1, col2 = st.columns(2)
 with col1:
     num_mods10 = st.selectbox("Número de modificadores +10", list(range(6)), index=0)
 with col2:
     num_mods5 = st.selectbox("Número de modificadores +5", list(range(0,(5-num_mods10)+1)), index=0)
-prioridad = st.selectbox("Estadística a priorizar", ["Ninguna"]+estadisticas, index=0)
+
+cols = st.columns(6)
+
+valores = {}
+for nombre, col in zip(estadisticas, cols):
+    with col:
+        valores[nombre] = st.number_input(
+            nombre,
+            step=10,
+            value=0,
+            format="%d"
+        )
+
+prioridad = st.selectbox("Estadística a priorizar", ["Ninguna"] + estadisticas, index=0)
 prioridad = None if prioridad=="Ninguna" else prioridad
 
 if st.button("Calcular combinación óptima"):
-    res = build_calc(minimos, num_mods10=num_mods10, num_mods5=num_mods5, usar_exotico=exotic, prioridad=prioridad)
+    res = build_calc(minimos, valores = valores, num_mods10 = num_mods10, num_mods5 = num_mods5, usar_exotico = exotic, prioridad = prioridad)
     if res is None:
         st.error("No se encontró ninguna combinación posible con esos mínimos.")
     else:
