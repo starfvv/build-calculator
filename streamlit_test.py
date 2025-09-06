@@ -82,6 +82,15 @@ def build_calc(minimos, valores = None, num_mods10 = 5, num_mods5 = 0,
 
     # Se define la expresión lineal que posteriormente su utilización.
 
+    # valores = {
+    #     "Salud": 0,
+    #     "CQC": 20,
+    #     "Granada": 0,
+    #     "Super": 0,
+    #     "Clase": 0,
+    #     "Armas": 0
+    #     }
+
     stat = {s: 0 for s in estadisticas}
     for s in estadisticas:
         expr = []
@@ -107,7 +116,7 @@ def build_calc(minimos, valores = None, num_mods10 = 5, num_mods5 = 0,
         stat[s] = pl.lpSum(expr)
 
     for s, min_val in minimos.items():
-        prob += stat[s] >= min_val
+        prob += stat[s] + valores[s] >= min_val
 
     prob += pl.lpSum(stat[s] for s in estadisticas) == \
             90*pl.lpSum(x[a] for a in arquetipos.keys()) + \
@@ -149,7 +158,7 @@ def build_calc(minimos, valores = None, num_mods10 = 5, num_mods5 = 0,
                                     if mods10[s].value()>0}
     resultado["modificadores5"] = {s:int(mods5[s].value()) for s in estadisticas 
                                    if mods5[s].value()>0}
-    resultado["estadisticas_finales"] = {s:int(stat[s].value()) for s in estadisticas}
+    resultado["estadisticas_finales"] = {s:int(stat[s].value() + valores[s]) for s in estadisticas}
 
     return resultado
 
@@ -251,7 +260,8 @@ with st.expander("ℹ️ Tutorial de la aplicación"):
         * 30 puntos en la estadística primaria  
         * 20 puntos en la estadística secundaria  
         * 13 puntos en la estadística terciaria
-    - Si quieres, es posible añadir modificadores mayores (+10) y menores (+5).  
+    - Puedes añadir modificadores mayores (+10) y menores (+5).  
+    - Además, tienes la posibilidad de incluir la suma o resta de estadísticas según los fragmentos que vayas a equipar en tu subclase.
     - Por último, puedes elegir la estadística prioritaria a maximizar si los mínimos permiten superar esos valores.
     """)
 
